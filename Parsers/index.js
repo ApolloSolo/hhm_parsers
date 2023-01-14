@@ -61,7 +61,7 @@ const filePaths = {
     ],
     mri_systems: [
       "SME02524",
-      //"SME02583", 1 mil + rows
+      "SME02583", //1 mil + rows
       "SME12424",
       "SME01123",
       "SME01096",
@@ -133,8 +133,10 @@ const croth_ge_ct = [
   "SME12443",
 ];
 const croth_phil_cv = ["SME00444"];
-const ge_cv = ["SME00865"];
- 
+const ge_cv = ["SME00865"]; // permission denied: "SME00498" "SME01442"
+// DEL "SME00865.sysError.log"
+//
+
 const determineManufacturer = async (jobId, sme) => {
   try {
     let queryString =
@@ -183,8 +185,7 @@ const onBoot = async (systems_list) => {
   }
 };
 
-onBoot(["SME01138"]);
-
+onBoot(filePaths.siemens.mri_systems);
 
 /* 
 const determineManufacturer = async (jobId, system) => {
@@ -220,10 +221,10 @@ const onBoot = async () => {
     console.time();
 
     let queryString =
-      "SELECT id, manufacturer, hhm_config, hhm_file_config from systems WHERE hhm_config IS NOT NULL"; //  AND modality = $1
+      "SELECT id, manufacturer, hhm_config, hhm_file_config from systems WHERE hhm_config IS NOT NULL AND modality = $1"; //  AND modality = $1
     let value = [process.argv[2]];
 
-    const system_array = await pgPool.query(queryString);
+    const system_array = await pgPool.query(queryString, value);
 
     for await (const system of system_array.rows) {
       let jobId = crypto.randomUUID();
@@ -239,4 +240,5 @@ const onBoot = async () => {
   }
 };
 
-onBoot();  */
+onBoot();
+ */

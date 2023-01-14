@@ -14,6 +14,7 @@ const {
   getCurrentFileSize,
   getRedisFileSize,
   updateRedisFileSize,
+  passForProcessing,
 } = require("../../../utils/redis");
 const execHead = require("../../../read/exec-head");
 
@@ -28,6 +29,7 @@ async function phil_cv_eventlog(jobId, sysConfigData, fileToParse) {
   const headPath = "./read/sh/head.sh";
 
   const data = [];
+  const redisData = [];
 
   try {
     const complete_file_path = `${sysConfigData.hhm_config.file_path}/${fileToParse.file_name}`;
@@ -86,9 +88,18 @@ async function phil_cv_eventlog(jobId, sysConfigData, fileToParse) {
           });
         }
       } else {
-        convertDates(matches.groups, dateTimeVersion);
+        //convertDates(matches.groups, dateTimeVersion);
         const matchData = groupsToArrayObj(sme, matches.groups);
         data.push(matchData);
+
+        // Build redis data passoff
+        // Format data to pass off to redis queue for data processing
+        redisData.push({
+          system_id: sme,
+          host_date: matchData.host_date,
+          host_time: matchData.host_time,
+          pg_table: fileToParse.pg_table,
+        });
       }
     }
 
@@ -109,6 +120,9 @@ async function phil_cv_eventlog(jobId, sysConfigData, fileToParse) {
         sysConfigData.hhm_config.file_path,
         fileToParse.file_name
       );
+
+      // Send data for processing to redis dp:queue
+      await passForProcessing(sme, redisData);
     }
   } catch (error) {
     await log("error", jobId, sme, "phil_cv_eventlog", "FN CALL", {

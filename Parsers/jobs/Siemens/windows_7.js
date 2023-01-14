@@ -12,6 +12,7 @@ const {
   getCurrentFileSize,
   getRedisFileSize,
   updateRedisFileSize,
+  passForProcessing
 } = require("../../utils/redis");
 const execHead = require("../../read/exec-head");
 
@@ -25,6 +26,7 @@ const parse_win_7 = async (jobId, sysConfigData, fileToParse) => {
   const headPath = "./read/sh/head.sh";
 
   const data = [];
+  const redisData = [];
 
   try {
     await log("info", jobId, sme, "parse_win_7", "FN CALL");
@@ -52,7 +54,7 @@ const parse_win_7 = async (jobId, sysConfigData, fileToParse) => {
       console.log("CURRENT FILE SIZE IS: " + currentFileSize);
 
       const delta = currentFileSize - prevFileSize;
-      await log("info", jobId, sme, "delta", "FN CALL", {delta: delta});
+      await log("info", jobId, sme, "delta", "FN CALL", { delta: delta });
       console.log("DELTA: " + delta);
 
       if (delta === 0) {
@@ -60,7 +62,7 @@ const parse_win_7 = async (jobId, sysConfigData, fileToParse) => {
         return;
       }
 
-      let tailDelta = await execTail(tailPath, delta, complete_file_path);
+      let tailDelta = await execHead(headPath, delta, complete_file_path);
 
       fileData = tailDelta.toString();
     }
@@ -74,9 +76,19 @@ const parse_win_7 = async (jobId, sysConfigData, fileToParse) => {
       }
       let matchGroups = match.match(win_7_re.small_group);
 
-      convertDates(matchGroups.groups, dateTimeVersion);
+      //convertDates(matchGroups.groups, dateTimeVersion);
       const matchData = groupsToArrayObj(sme, matchGroups.groups);
       data.push(matchData);
+
+      // Build redis data passoff
+      // Format data to pass off to redis queue for data processing
+      let month = matchData.month.slice(0, 3);
+      redisData.push({
+        system_id: sme,
+        host_date: `${matchData.day}-${month}-${matchData.year}`,
+        host_time: matchData.host_time,
+        pg_table: fileToParse.pg_table,
+      });
     }
 
     const mappedData = mapDataToSchema(data, siemens_cv_schema);
@@ -95,11 +107,13 @@ const parse_win_7 = async (jobId, sysConfigData, fileToParse) => {
         sysConfigData.hhm_config.file_path,
         fileToParse.file_name
       );
+      // Send data for processing to redis dp:queue
+      await passForProcessing(sme, redisData);
     }
 
     return true;
   } catch (error) {
-    console.log(error)
+    console.log(error);
     await log("error", jobId, sme, "parse_win_7", "FN CATCH", {
       error: error,
     });

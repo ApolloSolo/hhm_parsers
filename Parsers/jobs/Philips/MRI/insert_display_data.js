@@ -53,4 +53,16 @@ monitor_magnet_quench
 monitor_System_HumTechRoom
 monitor_System_TempTechRoom
 monitor_magnet_pressure_avg
+
+monitor_cryocompressor_cerr
+monitor_cryocompressor_palm
+monitor_cryocompressor_talm
+monitor_cryocompressor_time_status
+monitor_magnet_helium_level_value
+monitor_magnet_lt_boiloff
+monitor_magnet_pressure_dps
+monitor_magnet_quench
+monitor_System_HumTechRoom
+monitor_System_TempTechRoom
+monitor_magnet_pressure_avg
 */

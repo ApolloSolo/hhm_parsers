@@ -14,6 +14,7 @@ const {
   getCurrentFileSize,
   getRedisFileSize,
   updateRedisFileSize,
+  passForProcessing,
 } = require("../../utils/redis");
 const execHead = require("../../read/exec-head");
 
@@ -27,6 +28,7 @@ const parse_win_10 = async (jobId, sysConfigData, fileToParse) => {
   const headPath = "./read/sh/head.sh";
 
   const data = [];
+  const redisData = [];
 
   let line_num = 1;
   try {
@@ -84,10 +86,19 @@ const parse_win_10 = async (jobId, sysConfigData, fileToParse) => {
           });
         }
       }
-      convertDates(matches.groups, dateTimeVersion);
+      //convertDates(matches.groups, dateTimeVersion);
       const matchData = groupsToArrayObj(sme, matches.groups);
       data.push(matchData);
       line_num++;
+
+      // Build redis data passoff
+      // Format data to pass off to redis queue for data processing
+      redisData.push({
+        system_id: sme,
+        host_date: matchData.host_date,
+        host_time: matchData.host_time,
+        pg_table: fileToParse.pg_table,
+      });
     }
 
     const mappedData = mapDataToSchema(data, siemens_ct_mri);
@@ -106,6 +117,9 @@ const parse_win_10 = async (jobId, sysConfigData, fileToParse) => {
         sysConfigData.hhm_config.file_path,
         fileToParse.file_name
       );
+
+      // Send data for processing to redis dp:queue
+      await passForProcessing(sme, redisData);
     }
 
     return true;

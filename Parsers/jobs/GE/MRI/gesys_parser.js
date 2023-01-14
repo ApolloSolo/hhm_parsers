@@ -12,6 +12,7 @@ const {
   getCurrentFileSize,
   getRedisFileSize,
   updateRedisFileSize,
+  passForProcessing,
 } = require("../../../utils/redis");
 const execTail = require("../../../read/exec-tail");
 
@@ -24,6 +25,7 @@ async function ge_mri_gesys(jobId, sysConfigData, fileToParse) {
   const tailPath = "./read/sh/tail.sh";
 
   const data = [];
+  const redisData = [];
 
   try {
     await log("info", jobId, sme, "ge_mri_gesys", "FN CALL");
@@ -52,7 +54,7 @@ async function ge_mri_gesys(jobId, sysConfigData, fileToParse) {
       console.log("CURRENT FILE SIZE: " + currentFileSize);
 
       const delta = currentFileSize - prevFileSize;
-      await log("info", jobId, sme, "delta", "FN CALL", {delta: delta});
+      await log("info", jobId, sme, "delta", "FN CALL", { delta: delta });
       console.log(delta);
 
       if (delta === 0) {
@@ -78,9 +80,16 @@ async function ge_mri_gesys(jobId, sysConfigData, fileToParse) {
         });
         continue;
       }
-      convertDates(matchGroups.groups, dateTimeVersion);
+      //convertDates(matchGroups.groups, dateTimeVersion);
       const matchData = groupsToArrayObj(sme, matchGroups.groups);
       data.push(matchData);
+
+      redisData.push({
+        system_id: sme,
+        host_date: `${matchData.day}-${matchData.month}-${matchData.year}`,
+        host_time: matchData.host_time,
+        pg_table: fileToParse.pg_table,
+      });
     }
 
     const mappedData = mapDataToSchema(data, ge_mri_gesys_schema);
@@ -99,6 +108,9 @@ async function ge_mri_gesys(jobId, sysConfigData, fileToParse) {
         sysConfigData.hhm_config.file_path,
         fileToParse.file_name
       );
+
+      // Send data for processing to redis dp:queue
+      await passForProcessing(sme, redisData);
     }
 
     return;

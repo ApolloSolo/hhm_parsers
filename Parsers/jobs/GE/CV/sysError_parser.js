@@ -14,6 +14,7 @@ const {
   getCurrentFileSize,
   getRedisFileSize,
   updateRedisFileSize,
+  passForProcessing,
 } = require("../../../utils/redis");
 const execTail = require("../../../read/exec-tail");
 
@@ -26,6 +27,7 @@ async function ge_cv_sys_error(jobId, sysConfigData, fileToParse) {
   const tailPath = "./read/sh/tail.sh";
 
   const data = [];
+  const redisData = [];
 
   try {
     await log("info", jobId, sme, "ge_ct_gesys", "FN CALL");
@@ -82,11 +84,22 @@ async function ge_cv_sys_error(jobId, sysConfigData, fileToParse) {
           });
         }
       } else {
-        convertDates(matches.groups, dateTimeVersion);
+        //convertDates(matches.groups, dateTimeVersion);
         const matchData = groupsToArrayObj(sme, matches.groups);
         data.push(matchData);
+
+        // Format data to pass off to redis queue for data processing
+        redisData.push({
+          system_id: sme,
+          host_date: matchData.host_date,
+          host_time: matchData.host_time,
+          pg_table: fileToParse.pg_table,
+        });
       }
     }
+
+    // Remove headers - head of array
+    data.shift();
 
     const mappedData = mapDataToSchema(data, ge_cv_syserror_schema);
     const dataToArray = mappedData.map(({ ...rest }) => Object.values(rest));
@@ -98,12 +111,16 @@ async function ge_cv_sys_error(jobId, sysConfigData, fileToParse) {
       fileToParse
     );
     if (insertSuccess) {
+      // Data insert to db successfull, update new file size on redis
       await updateRedisFileSize(
         sme,
         updateSizePath,
         sysConfigData.hhm_config.file_path,
         fileToParse.file_name
       );
+
+      // send data for processing to redis dp:queue
+      await passForProcessing(sme, redisData);
     }
   } catch (error) {
     await log("error", jobId, sme, "ge_cv_sys_error", "FN CALL", {
@@ -113,3 +130,5 @@ async function ge_cv_sys_error(jobId, sysConfigData, fileToParse) {
 }
 
 module.exports = ge_cv_sys_error;
+
+// "{\"host_date\":\"12-Jan-23\",\"host_time\":\"01:08\",\"capture_datetime\":\"2023-01-12T08:15:00Z\",\"system_id\":\"SME09782\",\"pg_table\":\"mmb_ge_mm3\"}"
