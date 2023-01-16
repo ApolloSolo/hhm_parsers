@@ -185,7 +185,7 @@ const onBoot = async (systems_list) => {
   }
 };
 
-onBoot(filePaths.siemens.mri_systems);
+onBoot(["SME00445"]);
 
 /* 
 const determineManufacturer = async (jobId, system) => {

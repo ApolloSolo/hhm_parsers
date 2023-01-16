@@ -13,7 +13,7 @@ const {
   getRedisFileSize,
   updateRedisFileSize,
   passForProcessing,
-} = require("../../../utils/redis");
+} = require("../../../redis/redisHelpers");
 const execTail = require("../../../read/exec-tail");
 
 async function ge_ct_gesys(jobId, sysConfigData, fileToParse) {

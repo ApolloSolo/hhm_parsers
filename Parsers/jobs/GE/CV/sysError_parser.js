@@ -15,7 +15,7 @@ const {
   getRedisFileSize,
   updateRedisFileSize,
   passForProcessing,
-} = require("../../../utils/redis");
+} = require("../../../redis/redisHelpers");
 const execTail = require("../../../read/exec-tail");
 
 async function ge_cv_sys_error(jobId, sysConfigData, fileToParse) {

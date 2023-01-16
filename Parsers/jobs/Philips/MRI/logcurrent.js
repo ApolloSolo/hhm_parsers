@@ -15,7 +15,7 @@ const {
   getCurrentFileSize,
   getRedisFileSize,
   updateRedisFileSize,
-} = require("../../../utils/redis");
+} = require("../../../redis/redisHelpers");
 const execTail = require("../../../read/exec-tail");
 
 async function phil_mri_logcurrent(jobId, sysConfigData, fileToParse) {

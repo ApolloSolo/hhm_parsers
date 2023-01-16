@@ -1,33 +1,14 @@
 ("use strict");
 require("dotenv").config({ path: "../.env" });
 const { log } = require("../logger");
-const redis = require("redis");
 const execReadFileSize = require("../read/exec-readFileSize");
-
-// SETUP ENV BASED RESOURCES -> REDIS CLIENT, JOB SCHEDULES
-const clienConfig = {
-  socket: {
-    port: 6379,
-    host: process.env.REDIS_IP,
-  },
-};
-
-const redisClient = redis.createClient(clienConfig);
-
-redisClient.on(
-  "error",
-  async (err) =>
-    await log("error", "NA", "NA", "redisClient.on", `ON ERROR`, {
-      // TODO: KILL APP?
-      error: err,
-    })
-);
+const initRedis = require(".");
 
 async function updateRedisFileSize(sme, exec_path, file_path, file) {
   try {
     await log("info", "NA", sme, "updateRedisFileSize", "FN CALL");
 
-    await redisClient.connect();
+    const redisClient = await initRedis();
 
     const newFileSize = await execReadFileSize(
       exec_path,
@@ -50,7 +31,7 @@ async function getRedisFileSize(sme, file) {
   try {
     await log("info", "NA", sme, "getRedisFileSize", "FN CALL");
 
-    await redisClient.connect();
+    const redisClient = await initRedis();
 
     const getKey = `${sme}.${file}`;
     const fileSize = await redisClient.get(getKey);
@@ -68,7 +49,7 @@ async function getCurrentFileSize(sme, exec_path, file_path, file) {
   try {
     await log("info", "NA", sme, "getCurrentFileSize", "FN CALL");
 
-    await redisClient.connect();
+    const redisClient = await initRedis();
 
     const currentFileSize = await execReadFileSize(
       exec_path,
@@ -88,7 +69,7 @@ async function passForProcessing(sme, array) {
   try {
     await log("info", "NA", sme, "passForProcessing", "FN CALL");
 
-    await redisClient.connect();
+    const redisClient = await initRedis();
 
     const key = "dp:queue";
     for await (let datum of array) {

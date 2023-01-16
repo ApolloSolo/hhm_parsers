@@ -15,7 +15,7 @@ const {
   getRedisFileSize,
   updateRedisFileSize,
   passForProcessing,
-} = require("../../../utils/redis");
+} = require("../../../redis/redisHelpers");
 const execHead = require("../../../read/exec-head");
 
 // EventLog.txt runs 1 per day

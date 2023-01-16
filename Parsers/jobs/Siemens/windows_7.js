@@ -13,7 +13,7 @@ const {
   getRedisFileSize,
   updateRedisFileSize,
   passForProcessing
-} = require("../../utils/redis");
+} = require("../../redis/redisHelpers");
 const execHead = require("../../read/exec-head");
 
 const parse_win_7 = async (jobId, sysConfigData, fileToParse) => {
