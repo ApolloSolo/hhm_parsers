@@ -6,7 +6,7 @@ const pgPool = require("../../db/pg-pool");
 const readFile = async () => {
   const re = /.*(?<file_path>\/opt.+SME\d+)/;
   const rl = readline.createInterface({
-    input: fs.createReadStream("./GE_Imaging"),
+    input: fs.createReadStream("./configWriter/GE_Imaging"),
     crlfDelay: Infinity,
   });
 
@@ -27,26 +27,17 @@ const readFile = async () => {
 
     if (system_data.rows[0].modality === "MRI") {
       let update = "UPDATE systems" + "\n";
-      let set = "SET hhm_config = ";
+      let set_hhm = "SET hhm_config = ";
+      let set_file = "hhm_file_config = ";
       let hhm_config =
-        `'{"file_path": "${matches.groups.file_path}", "modality": "MRI"}'` +
-        "\n";
+        `'{"file_path": "${matches.groups.file_path}", "modality": "MRI"}'` + ","  + "\n";
       let file_config =
-        `'[{"query": "gesys", "file_name": "", "datetimeVersion": "type_2", "last_mod": "", "index": 0}]'` +
+        `'[{"query": "gesys", "file_name": "", "datetimeVersion": "type_2", "last_mod": "", "index": 0, "pg_table": "log.ge_mri_gesys"}]'` +
         "\n";
-      let where = `WHERE id = '${current_sme}';` + "\n";
+      let where = `WHERE id = '${current_sme}';` + "\n" + "\n";
 
       let string =
-        update +
-        set +
-        hhm_config +
-        where +
-        "\n" +
-        update +
-        "SET hhm_file_config = " +
-        file_config +
-        where +
-        "\n";
+        update + set_hhm + hhm_config + set_file + file_config + where;
 
       await fsp.writeFile(`./configWriter/ge_imaging/ge_mri.sql`, string, {
         encoding: "utf-8",
@@ -67,26 +58,17 @@ const readFile = async () => {
 
     if (system_data.rows[0].modality === "CT") {
       let update = "UPDATE systems" + "\n";
-      let set = "SET hhm_config = ";
+      let set_hhm = "SET hhm_config = ";
+      let set_file = "hhm_file_config = ";
       let hhm_config =
-        `'{"file_path": "${matches.groups.file_path}", "modality": "CT"}'` +
-        "\n";
-      let where = `WHERE id = '${current_sme}';` + "\n";
+        `'{"file_path": "${matches.groups.file_path}", "modality": "CT"}'` + ","  + "\n";
       let file_config =
-        `'[{"query": "gesys", "file_name": "", "datetimeVersion": "type_2", "last_mod": "", "index": 0}]'` +
+        `'[{"query": "gesys", "file_name": "", "datetimeVersion": "type_2", "last_mod": "", "index": 0, "pg_table": "log.ge_ct_gesys"}]'` +
         "\n";
+      let where = `WHERE id = '${current_sme}';` + "\n" + "\n";
 
-        let string =
-        update +
-        set +
-        hhm_config +
-        where +
-        "\n" +
-        update +
-        "SET hhm_file_config = " +
-        file_config +
-        where +
-        "\n";
+      let string =
+        update + set_hhm + hhm_config + set_file + file_config + where;
 
       await fsp.writeFile(`./configWriter/ge_imaging/ge_ct.sql`, string, {
         encoding: "utf-8",

@@ -3,21 +3,23 @@ const { log } = require("../logger");
 const convertRowsToColumns = require("../utils/convert-rows-to-columns");
 const queries = require("./queries");
 
-async function bulkInsert(jobId, data, sysConfigData, fileToParse) {
+async function bulkInsert(jobId, data, sysConfigData, fileConfig) {
   try {
     if (data.length === 0) {
       throw new Error("File is empty/no matches");
     }
-    const fileQuery = fileToParse.query;
+    //const fileQuery = fileConfig.query;
 
-    console.log(sysConfigData.manufacturer);
+   /*  console.log(sysConfigData.manufacturer);
     console.log(sysConfigData.hhm_config.modality);
-    console.log(fileQuery);
+    console.log(fileQuery); */
+
+    
 
     const query =
       queries[`${sysConfigData.manufacturer}`][
         `${sysConfigData.hhm_config.modality}`
-      ][`${fileToParse.query}`];
+      ][`${fileConfig.query}`];
     console.log(query);
 
     const payload = await convertRowsToColumns(jobId, sysConfigData.id, data);

@@ -38,8 +38,14 @@ const ge_re = {
 };
 
 const philips_re = {
+  ct_eal_events_blocks:
+    /\[reading] : EALInfo(?<eal_info_block>.*)\[\/reading] : EALInfo.*?\[reading] : Events(?<events_block>.*)\[\/reading] : Events/s,
   ct_eal:
     /(?<line>.*?)[|](?<err_type>.*?)[|](?<tmstamp>.*?)[|](?<file>.*?)[|](?<datatype>.*?)[|](?<param1>.*?)[|](?<errnum>.*?)[|](?<info>.*?)(\s+)?[|](?<dtime>.*?)[|](?<ealtime>.*?)[|](?<lognumber>.*?)[|](?<param2>.*?)[|](?<vxwerrno>.*?)[|](?<controller>.*?)?/,
+  ct_eal_new:
+    /"(?<host_date>.*?)\s(?<host_time>.*?)",(?<controller>.*?),"(?<data_type>.*?)",(?<log_number>.*?),(?<tm_stamp>.*?),"(?<err_type>.*?)",(?<err_number>.*?),(?<vxw_err_no>.*?),(?<file>.*?),(?<line>.*?),(?<param_1>.*?),(?<param_2>.*?),"?(?<info>.*?)"?,"(?<eal_time>.*?)"?[\r\n]/gs,
+  ct_events_new:
+    /"(?<type>.*?)",(?<level>.*?),"?(?<module>.*?)"?,(?<time_stamp>.*?),"(?<host_date>.*?)\s(?<host_time>.*?)","?(?<message>.*?)"?,"?(?<eal>.*?)"?,"?(?<blob>.*?),?"?,"(?<event_time>.*?)"/gs,
   ct_events:
     /(?<eventtime>.*?)[|](?<blob>.*?)[|](?<type>.*?)[|](?<tstampnum>.*?)[|](?<eal>.*?)[|](?<level>.*?)[|](?<ermodulernum>.*?)[|](?<dtime>.*?)[|](?<msg>.*)?/,
   mri_logcurrent:

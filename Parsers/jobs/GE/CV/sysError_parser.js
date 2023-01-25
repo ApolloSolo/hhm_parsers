@@ -4,22 +4,19 @@ const { log } = require("../../../logger");
 const fs = require("node:fs");
 const readline = require("readline");
 const { ge_re } = require("../../../parse/parsers");
-const groupsToArrayObj = require("../../../parse/prep-groups-for-array");
 const mapDataToSchema = require("../../../persist/map-data-to-schema");
 const { ge_cv_syserror_schema } = require("../../../persist/pg-schemas");
 const bulkInsert = require("../../../persist/queryBuilder");
 const { blankLineTest } = require("../../../utils/regExHelpers");
-const { convertDates } = require("../../../utils/dates");
 const {
   getCurrentFileSize,
   getRedisFileSize,
   updateRedisFileSize,
-  passForProcessing,
 } = require("../../../redis/redisHelpers");
 const execTail = require("../../../read/exec-tail");
+const generateDateTime = require("../../../processing/date_processing/generateDateTimes");
 
 async function ge_cv_sys_error(jobId, sysConfigData, fileToParse) {
-  const dateTimeVersion = fileToParse.datetimeVersion;
   const sme = sysConfigData.id;
 
   const updateSizePath = "./read/sh/readFileSize.sh";
@@ -27,7 +24,6 @@ async function ge_cv_sys_error(jobId, sysConfigData, fileToParse) {
   const tailPath = "./read/sh/tail.sh";
 
   const data = [];
-  const redisData = [];
 
   try {
     await log("info", jobId, sme, "ge_ct_gesys", "FN CALL");
@@ -71,6 +67,8 @@ async function ge_cv_sys_error(jobId, sysConfigData, fileToParse) {
       rl = tailDelta.toString().split(/(?:\r\n|\r|\n)/g);
     }
 
+    // Begin parsing file data
+
     for await (const line of rl) {
       let matches = line.match(ge_re.cv.sys_error);
       if (matches === null) {
@@ -84,17 +82,28 @@ async function ge_cv_sys_error(jobId, sysConfigData, fileToParse) {
           });
         }
       } else {
-        //convertDates(matches.groups, dateTimeVersion);
-        const matchData = groupsToArrayObj(sme, matches.groups);
-        data.push(matchData);
+        matches.groups.system_id = sme;
 
-        // Format data to pass off to redis queue for data processing
-        redisData.push({
-          system_id: sme,
-          host_date: matchData.host_date,
-          host_time: matchData.host_time,
-          pg_table: fileToParse.pg_table,
-        });
+        // Remove colen ":" from millisecond delimiter and change to period "."
+        let splitColens = matches.groups.host_time.split(":");
+        matches.groups.host_time = `${splitColens[0]}:${splitColens[1]}:${splitColens[2]}.${splitColens[3]}`;
+        const dtObject = await generateDateTime(
+          jobId,
+          matches.groups.system_id,
+          fileToParse.pg_table,
+          matches.groups.host_date,
+          matches.groups.host_time
+        );
+
+        if (dtObject === null) {
+          await log("warn", jobId, sme, "date_time", "FN CALL", {
+            message: "date_time object null",
+          });
+        }
+
+        matches.groups.host_datetime = dtObject;
+
+        data.push(matches.groups);
       }
     }
 
@@ -118,9 +127,6 @@ async function ge_cv_sys_error(jobId, sysConfigData, fileToParse) {
         sysConfigData.hhm_config.file_path,
         fileToParse.file_name
       );
-
-      // send data for processing to redis dp:queue
-      await passForProcessing(sme, redisData);
     }
   } catch (error) {
     await log("error", jobId, sme, "ge_cv_sys_error", "FN CALL", {

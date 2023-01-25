@@ -9,19 +9,17 @@ const mapDataToSchema = require("../../../persist/map-data-to-schema");
 const { philips_cv_eventlog_schema } = require("../../../persist/pg-schemas");
 const bulkInsert = require("../../../persist/queryBuilder");
 const { blankLineTest } = require("../../../utils/regExHelpers");
-const { convertDates } = require("../../../utils/dates");
 const {
   getCurrentFileSize,
   getRedisFileSize,
   updateRedisFileSize,
-  passForProcessing,
 } = require("../../../redis/redisHelpers");
 const execHead = require("../../../read/exec-head");
+const generateDateTime = require("../../../processing/date_processing/generateDateTimes");
 
 // EventLog.txt runs 1 per day
 
 async function phil_cv_eventlog(jobId, sysConfigData, fileToParse) {
-  const dateTimeVersion = fileToParse.datetimeVersion;
   const sme = sysConfigData.id;
 
   const updateSizePath = "./read/sh/readFileSize.sh";
@@ -29,7 +27,6 @@ async function phil_cv_eventlog(jobId, sysConfigData, fileToParse) {
   const headPath = "./read/sh/head.sh";
 
   const data = [];
-  const redisData = [];
 
   try {
     const complete_file_path = `${sysConfigData.hhm_config.file_path}/${fileToParse.file_name}`;
@@ -88,18 +85,25 @@ async function phil_cv_eventlog(jobId, sysConfigData, fileToParse) {
           });
         }
       } else {
-        //convertDates(matches.groups, dateTimeVersion);
-        const matchData = groupsToArrayObj(sme, matches.groups);
-        data.push(matchData);
+        matches.groups.system_id = sme;
 
-        // Build redis data passoff
-        // Format data to pass off to redis queue for data processing
-        redisData.push({
-          system_id: sme,
-          host_date: matchData.host_date,
-          host_time: matchData.host_time,
-          pg_table: fileToParse.pg_table,
-        });
+        const dtObject = await generateDateTime(
+          jobId,
+          matches.groups.system_id,
+          fileToParse.pg_table,
+          matches.groups.host_date,
+          matches.groups.host_time
+        );
+
+        if (dtObject === null) {
+          await log("warn", jobId, sme, "date_time", "FN CALL", {
+            message: "date_time object null",
+          });
+        }
+
+        matches.groups.host_datetime = dtObject;
+
+        data.push(matches.groups);
       }
     }
 
@@ -120,9 +124,6 @@ async function phil_cv_eventlog(jobId, sysConfigData, fileToParse) {
         sysConfigData.hhm_config.file_path,
         fileToParse.file_name
       );
-
-      // Send data for processing to redis dp:queue
-      await passForProcessing(sme, redisData);
     }
   } catch (error) {
     await log("error", jobId, sme, "phil_cv_eventlog", "FN CALL", {

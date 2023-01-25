@@ -2,22 +2,19 @@
 require("dotenv").config({ path: "../../.env" });
 const { log } = require("../../../logger");
 const fs = require("node:fs").promises;
-const groupsToArrayObj = require("../../../parse/prep-groups-for-array");
 const { ge_re } = require("../../../parse/parsers");
 const mapDataToSchema = require("../../../persist/map-data-to-schema");
 const { ge_ct_gesys_schema } = require("../../../persist/pg-schemas");
 const bulkInsert = require("../../../persist/queryBuilder");
-const { convertDates } = require("../../../utils/dates");
 const {
   getCurrentFileSize,
   getRedisFileSize,
   updateRedisFileSize,
-  passForProcessing,
 } = require("../../../redis/redisHelpers");
 const execTail = require("../../../read/exec-tail");
+const generateDateTime = require("../../../processing/date_processing/generateDateTimes");
 
 async function ge_ct_gesys(jobId, sysConfigData, fileToParse) {
-  const dateTimeVersion = fileToParse.datetimeVersion;
   const sme = sysConfigData.id;
 
   const updateSizePath = "./read/sh/readFileSize.sh";
@@ -25,21 +22,22 @@ async function ge_ct_gesys(jobId, sysConfigData, fileToParse) {
   const tailPath = "./read/sh/tail.sh";
 
   const data = [];
-  const redisData = [];
 
   try {
     await log("info", jobId, sme, "ge_ct_gesys", "FN CALL");
 
     let complete_file_path = `${sysConfigData.hhm_config.file_path}/${fileToParse.file_name}`;
 
-    const prevFileSize = await getRedisFileSize(sme, fileToParse.file_name);
+    let prevFileSize = await getRedisFileSize(sme, fileToParse.file_name);
 
+    // If no file size in redis, read entire file
     let fileData;
-    if (prevFileSize === null) {
+    if (prevFileSize === null || prevFileSize === "0") {
       console.log("This needs to be read from file");
       fileData = (await fs.readFile(complete_file_path)).toString();
     }
 
+    // If there is a file size in redis, get delta and tail delta
     if (prevFileSize > 0 && prevFileSize !== null) {
       console.log("File Size prev saved in Redis");
 
@@ -65,22 +63,36 @@ async function ge_ct_gesys(jobId, sysConfigData, fileToParse) {
       fileData = tailDelta.toString();
     }
 
+    // Begin parsing file data
     let matches = fileData.match(ge_re.ct.gesys.block);
 
     for await (let match of matches) {
       const matchGroups = match.match(ge_re.ct.gesys.new);
-      //convertDates(matchGroups.groups, dateTimeVersion);
-      const matchData = groupsToArrayObj(sme, matchGroups.groups);
-      data.push(matchData);
 
-      // Build redis data passoff
-      // Format data to pass off to redis queue for data processing
-      redisData.push({
-        system_id: sme,
-        host_date: `${matchData.day}-${matchData.month}-${matchData.year}`,
-        host_time: matchData.host_time,
-        pg_table: fileToParse.pg_table,
-      });
+      matchGroups.groups.host_date = `${
+        matchGroups.groups.day.length === 1
+          ? 0 + matchGroups.groups.day
+          : matchGroups.groups.day
+      }-${matchGroups.groups.month}-${matchGroups.groups.year}`;
+      matchGroups.groups.system_id = sme;
+
+      const dtObject = await generateDateTime(
+        jobId,
+        matchGroups.groups.system_id,
+        fileToParse.pg_table,
+        matchGroups.groups.host_date,
+        matchGroups.groups.host_time
+      );
+
+      if (dtObject === null) {
+        await log("warn", jobId, sme, "date_time", "FN CALL", {
+          message: "date_time object null",
+        });
+      }
+
+      matchGroups.groups.host_datetime = dtObject;
+
+      data.push(matchGroups.groups);
     }
 
     const mappedData = mapDataToSchema(data, ge_ct_gesys_schema);
@@ -99,9 +111,6 @@ async function ge_ct_gesys(jobId, sysConfigData, fileToParse) {
         sysConfigData.hhm_config.file_path,
         fileToParse.file_name
       );
-
-      // Send data for processing to redis dp:queue
-      await passForProcessing(sme, redisData);
     }
   } catch (error) {
     await log("error", "NA", sme, "ge_ct_gesys", "FN CALL", {

@@ -3,11 +3,11 @@ require("dotenv").config({ path: "../../.env" });
 const { log } = require("../../../logger");
 const { philips_re } = require("../../../parse/parsers");
 const mapDataToSchema = require("../../../persist/map-data-to-schema");
-const { philips_ct_events_schema } = require("../../../persist/pg-schemas");
+const { philips_ct_eal_schema } = require("../../../persist/pg-schemas");
 const bulkInsert = require("../../../persist/queryBuilder");
 const generateDateTime = require("../../../processing/date_processing/generateDateTimes");
 
-async function phil_ct_events(
+async function phil_ct_eal(
   jobId,
   sysConfigData,
   fileToParse,
@@ -17,25 +17,18 @@ async function phil_ct_events(
   const data = [];
 
   try {
-    await log("info", jobId, sme, "phil_ct_events", "FN CALL");
+    await log("info", jobId, sme, "phil_ct_eal", "FN CALL");
 
-    const events_block_groups = ct_eal_events_blocks.matchAll(
-      philips_re.ct_events_new
+    const eal_block_groups = ct_eal_events_blocks.matchAll(
+      philips_re.ct_eal_new
     );
 
-    for (let match of events_block_groups) {
-      // non-utf8 characters existing in ERROR_BLOB entries
-      if (match.groups.type === "ERROR_BLOB") {
-        let blob_reduced = match.groups.blob.match(/(?<blob>\w+)/);
-        match.groups.blob = blob_reduced.groups.blob;
-      }
-
+    for (let match of eal_block_groups) {
       match.groups.system_id = sme;
-
       const dtObject = await generateDateTime(
         "uuid",
         match.groups.system_id,
-        fileToParse.pg_table.events,
+        fileToParse.pg_table.eal,
         match.groups.host_date,
         match.groups.host_time
       );
@@ -45,10 +38,10 @@ async function phil_ct_events(
       data.push(match.groups);
     }
 
-    const mappedData = mapDataToSchema(data, philips_ct_events_schema);
+    const mappedData = mapDataToSchema(data, philips_ct_eal_schema);
     const dataToArray = mappedData.map(({ ...rest }) => Object.values(rest));
 
-    const query = { query: fileToParse.query.events };
+    const query = { query: fileToParse.query.eal };
 
     const insertSuccess = await bulkInsert(
       jobId,
@@ -58,10 +51,10 @@ async function phil_ct_events(
     );
   } catch (error) {
     console.log(error);
-    await log("error", jobId, sme, "phil_ct_events", "FN CALL", {
+    await log("error", jobId, sme, "phil_ct_eal", "FN CALL", {
       error,
     });
   }
 }
 
-module.exports = phil_ct_events;
+module.exports = phil_ct_eal;

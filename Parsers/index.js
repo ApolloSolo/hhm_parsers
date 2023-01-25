@@ -48,7 +48,6 @@ const filePaths = {
       "SME12413",
       "SME12443",
       "SME00896",
-      "SME00897",
       "SME01091",
       "SME00847",
       "SME01076",
@@ -57,11 +56,14 @@ const filePaths = {
       "SME01431",
       "SME01432",
       "SME01433",
+      "SME01434",
+      "SME01176",
       "SME10071",
     ],
+    cv_systems: ["SME00865", "SME00498", "SME01442"],
     mri_systems: [
       "SME02524",
-      "SME02583", //1 mil + rows
+      //"SME02583", // +1 mil rows
       "SME12424",
       "SME01123",
       "SME01096",
@@ -86,29 +88,29 @@ const filePaths = {
 };
 
 const crothal_demo = [
-  "SME00444",
+  "SME00444", // Phil CV
   "SME00445",
   "SME00446",
   "SME02524",
-  "SME07761",
+  "SME07761", // Phil CV
   "SME00782",
-  "SME00784",
+  "SME00784", // Phil CV
   "SME00785",
   "SME00786",
   "SME01227",
   "SME02548",
   "SME02583",
   "SME02535",
-  "SME02377",
-  "SME02378",
-  "SME02579",
-  "SME02580",
+  "SME02377", // Phil CV
+  "SME02378", // Phil CV
+  "SME02579", // Phil CV
+  "SME02580", // Phil CV
   "SME02552",
   "SME07852",
   "SME07855",
   "SME07860",
   "SME07862",
-  "SME07864",
+  "SME07864", // Phil CV
   "SME08102",
   "SME12444",
   "SME12446",
@@ -121,23 +123,7 @@ const crothal_demo = [
   "SME12445",
 ];
 
-const croth_ge_mri = ["SME12424", "SME02583", "SME02524"];
-const croth_ge_ct = [
-  "SME12444",
-  "SME12446",
-  "SME12450",
-  "SME12445",
-  "SME12451",
-  "SME12412",
-  "SME12413",
-  "SME12443",
-];
-const croth_phil_cv = ["SME00444"];
-const ge_cv = ["SME00865"]; // permission denied: "SME00498" "SME01442"
-// DEL "SME00865.sysError.log"
-//
-
-const determineManufacturer = async (jobId, sme) => {
+/* const determineManufacturer = async (jobId, sme) => {
   try {
     let queryString =
       "SELECT id, manufacturer, hhm_config, hhm_file_config from systems WHERE id = $1";
@@ -185,9 +171,9 @@ const onBoot = async (systems_list) => {
   }
 };
 
-onBoot(["SME00445"]);
+onBoot(["SME12444", "SME12446", "SME12450"]);
+ */
 
-/* 
 const determineManufacturer = async (jobId, system) => {
   try {
     await log("info", jobId, system.id, "determineManufacturer", "FN CALL", {
@@ -241,4 +227,3 @@ const onBoot = async () => {
 };
 
 onBoot();
- */

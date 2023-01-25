@@ -44,7 +44,8 @@ CREATE TABLE log.siemens_mri(
     month TEXT,
     day INT,
     year INT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 CREATE TABLE log.siemens_ct(
@@ -61,7 +62,8 @@ CREATE TABLE log.siemens_ct(
     month TEXT,
     day INT,
     year INT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 CREATE TABLE log.siemens_cv(
@@ -76,7 +78,8 @@ CREATE TABLE log.siemens_cv(
     month TEXT,
     day INT,
     year INT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 CREATE TABLE log.ge_mri_gesys(
@@ -107,7 +110,8 @@ CREATE TABLE log.ge_mri_gesys(
     message TEXT,
     sr INT,
     en INT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 CREATE TABLE log.ge_ct_gesys(
@@ -138,7 +142,8 @@ CREATE TABLE log.ge_ct_gesys(
     message TEXT,
     sr INT,
     en INT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 CREATE TABLE log.ge_cv_syserror(
@@ -162,7 +167,8 @@ CREATE TABLE log.ge_cv_syserror(
     debugtext TEXT,
     sourcefile TEXT,
     sourceline INT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 
@@ -183,7 +189,8 @@ CREATE TABLE log.philips_ct_eal(
     param2 TEXT,
     vxwerrno INT,
     controller TEXT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 CREATE TABLE log.philips_ct_events(
@@ -198,7 +205,8 @@ CREATE TABLE log.philips_ct_events(
     ermodulernum TEXT,
     dtime TEXT,
     msg TEXT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 CREATE TABLE log.philips_mri_rmmu_magnet(
@@ -219,7 +227,8 @@ CREATE TABLE log.philips_mri_rmmu_magnet(
     event TEXT,
     data TEXT,
     descr TEXT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 CREATE TABLE log.philips_mri_logcurrent(
@@ -239,7 +248,8 @@ CREATE TABLE log.philips_mri_logcurrent(
     size_copy_value TEXT,
     data_8 TEXT,
     reconstructor TEXT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 CREATE TABLE log.philips_mri_rmmu_short(
@@ -273,7 +283,8 @@ CREATE TABLE log.philips_mri_rmmu_short(
     CompressorReset_state varchar(2),
     Chd_value INT,
     Cpr_value INT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 CREATE TABLE log.philips_mri_rmmu_long(
@@ -308,7 +319,8 @@ CREATE TABLE log.philips_mri_rmmu_long(
     CompressorReset_state varchar(2),
     Chd_value INT,
     Cpr_value INT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 CREATE TABLE log.philips_cv_eventlog(
@@ -329,7 +341,8 @@ CREATE TABLE log.philips_cv_eventlog(
     subsystem_number INT,
     thread_name TEXT,
     message TEXT,
-    date_time TIMESTAMP
+    host_datetime TIMESTAMP,
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 CREATE TABLE log.philips_mri_monitor(
@@ -341,7 +354,7 @@ CREATE TABLE log.philips_mri_monitor(
 CREATE TABLE log.philips_mri_monitoring_data(
     id BIGSERIAL PRIMARY KEY,
     equipment_id TEXT,
-    date_time TIMESTAMP,
+    host_datetime TIMESTAMP,
     date TEXT,
     tech_room_humidity_value DECIMAL, -- [%] (0=sensor not connected or broken)
     tech_room_temp_value DECIMAL, -- [C](0=sensor not connected or broken)
@@ -352,7 +365,8 @@ CREATE TABLE log.philips_mri_monitoring_data(
     helium_level_value DECIMAL, -- [%]
     long_term_boil_off_value DECIMAL, -- (-1 = stuck_probe) [ml/h]
     mag_dps_status_value DECIMAL, -- (minutes) [0=OK,  >0 =Alarm status]
-    quenched_state DECIMAL -- [0=No;1=Yes]
+    quenched_state DECIMAL, -- [0=No;1=Yes]
+    status TEXT DEFAULT 'AWAITING PROCESSING'
 );
 
 -- System Unites
@@ -392,61 +406,61 @@ VALUES ('SME01138', '%', 'C', 'minutes', 'minutes', 'minutes', '%', 'ml/h', 'min
 
 -- log.siemens_mri
 CREATE INDEX idx_siemens_mri_equipment_id ON log.siemens_mri(equipment_id);
-CREATE INDEX idx_siemens_mri_date_time ON log.siemens_mri(date_time);
+CREATE INDEX idx_siemens_mri_datetime ON log.siemens_mri(host_datetime);
 
 -- log.siemens_ct;
 CREATE INDEX idx_siemens_ct_equipment_id ON log.siemens_ct(equipment_id);
-CREATE INDEX idx_siemens_ct_date_time ON log.siemens_ct(date_time);
+CREATE INDEX idx_siemens_ct_datetime ON log.siemens_ct(host_datetime);
 
 -- log.siemens_cv;
 CREATE INDEX idx_siemens_cv_equipment_id ON log.siemens_cv(equipment_id);
-CREATE INDEX idx_siemens_cv_date_time ON log.siemens_cv(date_time);
+CREATE INDEX idx_siemens_cv_datetime ON log.siemens_cv(host_datetime);
 
 -- log.ge_mri_gesys;
 CREATE INDEX idx_ge_mri_gesys_equipment_id ON log.ge_mri_gesys(equipment_id);
-CREATE INDEX idx_ge_mri_gesys_date_time ON log.ge_mri_gesys(date_time);
+CREATE INDEX idx_ge_mri_gesys_datetime ON log.ge_mri_gesys(host_datetime);
 
 -- log.ge_ct_gesys;
 CREATE INDEX idx_ge_ct_gesys_equipment_id ON log.ge_ct_gesys(equipment_id);
-CREATE INDEX idx_ge_ct_gesys_date_time ON log.ge_ct_gesys(date_time);
+CREATE INDEX idx_ge_ct_gesys_datetime ON log.ge_ct_gesys(host_datetime);
 
 -- log.ge_cv_syserror;
 CREATE INDEX idx_ge_cv_syserror_equipment_id ON log.ge_cv_syserror(equipment_id);
-CREATE INDEX idx_ge_cv_syserror_date_time ON log.ge_cv_syserror(date_time);
+CREATE INDEX idx_ge_cv_syserror_datetime ON log.ge_cv_syserror(host_datetime);
 
 -- log.philips_ct_eal;
 CREATE INDEX idx_philips_ct_eal_equipment_id ON log.philips_ct_eal(equipment_id);
-CREATE INDEX idx_philips_ct_eal_date_time ON log.philips_ct_eal(date_time);
+CREATE INDEX idx_philips_ct_eal_datetime ON log.philips_ct_eal(host_datetime);
 
 -- log.philips_ct_events;
 CREATE INDEX idx_philips_ct_events_equipment_id ON log.philips_ct_events(equipment_id);
-CREATE INDEX idx_philips_ct_events_date_time ON log.philips_ct_events(date_time);
+CREATE INDEX idx_philips_ct_events_datetime ON log.philips_ct_events(host_datetime);
 
 -- log.philips_mri_rmmu_magnet;
 CREATE INDEX idx_philips_mri_rmmu_magnet_equipment_id ON log.philips_mri_rmmu_magnet(equipment_id);
-CREATE INDEX idx_philips_mri_rmmu_magnet_date_time ON log.philips_mri_rmmu_magnet(date_time);
+CREATE INDEX idx_philips_mri_rmmu_magnet_datetime ON log.philips_mri_rmmu_magnet(host_datetime);
 
 -- log.philips_mri_logcurrent;
 CREATE INDEX idx_philips_mri_logcurrent_equipment_id ON log.philips_mri_logcurrent(equipment_id);
-CREATE INDEX idx_philips_mri_logcurrent_date_time ON log.philips_mri_logcurrent(date_time);
+CREATE INDEX idx_philips_mri_logcurrent_datetime ON log.philips_mri_logcurrent(host_datetime);
 
 -- log.philips_mri_rmmu_short;
 CREATE INDEX idx_philips_mri_rmmu_short_equipment_id ON log.philips_mri_rmmu_short(equipment_id);
-CREATE INDEX idx_philips_mri_rmmu_short_date_time ON log.philips_mri_rmmu_short(date_time);
+CREATE INDEX idx_philips_mri_rmmu_short_datetime ON log.philips_mri_rmmu_short(host_datetime);
 
 -- log.philips_mri_rmmu_long;
 CREATE INDEX idx_philips_mri_rmmu_long_equipment_id ON log.philips_mri_rmmu_long(equipment_id);
-CREATE INDEX idx_philips_mri_rmmu_long_date_time ON log.philips_mri_rmmu_long(date_time);
+CREATE INDEX idx_philips_mri_rmmu_long_datetime ON log.philips_mri_rmmu_long(host_datetime);
 
 -- log.philips_cv_eventlog;
 CREATE INDEX idx_philips_cv_eventlog_equipment_id ON log.philips_cv_eventlog(equipment_id);
-CREATE INDEX idx_philips_cv_eventlog_date_time ON log.philips_cv_eventlog(date_time);
+CREATE INDEX idx_philips_cv_eventlog_datetime ON log.philips_cv_eventlog(host_datetime);
 
 -- log.philips_mri_monitor;
 CREATE INDEX idx_philips_mri_monitor_equipment_id ON log.philips_mri_monitor(equipment_id);
 
 -- log.philips_mri_monitoring_data;
 CREATE INDEX idx_philips_mri_monitoring_data_equipment_id ON log.philips_mri_monitoring_data(equipment_id);
-CREATE INDEX idx_philips_mri_monitoring_data_date_time ON log.philips_mri_monitoring_data(date_time);
+CREATE INDEX idx_philips_mri_monitoring_data_datetime ON log.philips_mri_monitoring_data(host_datetime);
 
 ROLLBACK;

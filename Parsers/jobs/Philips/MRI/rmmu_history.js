@@ -20,6 +20,8 @@ async function phil_mri_rmmu_history(jobId, sysConfigData, fileToParse) {
   try {
     await log("info", jobId, sme, "phil_mri_rmmu_history", "FN CALL");
 
+    
+
     /* const completeFilePath = await constructFilePath(
       sysConfigData.hhm_config.file_path,
       fileToParse,

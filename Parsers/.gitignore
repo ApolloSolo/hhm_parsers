@@ -3,6 +3,7 @@ node_modules/
 *.log
 *.txt
 *.txe
+*.output
 
 node_modules/
 .env

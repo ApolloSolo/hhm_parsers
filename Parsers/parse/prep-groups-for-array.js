@@ -3,7 +3,7 @@ const groupsToArrayObj = (SME, matchGroups) => {
   for (const [groupName, groupValue] of Object.entries(matchGroups)) {
     data[groupName] = groupValue;
   }
-  data.equipment_id = SME;
+  data.system_id = SME;
   return data;
 };
 
